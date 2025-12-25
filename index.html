@@ -7,6 +7,8 @@
   <title>Audio Tool</title>
   <link rel="icon"
     href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' stroke='%233b9ea8' stroke-width='2.5' fill='none'/><path d='M12 10v12l10-6z' fill='%233b9ea8'/></svg>">
+  <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/libflacjs@5.4.0/dist/libflac.min.js"></script>
   <style>
     *,
     *::before,
@@ -73,6 +75,7 @@
       font-weight: 700;
       background: linear-gradient(135deg, var(--accent), #5bc4ce);
       -webkit-background-clip: text;
+      background-clip: text;
       -webkit-text-fill-color: transparent
     }
 
@@ -213,16 +216,38 @@
     }
 
     .tool-btn:hover .tooltip,
-    .transport-btn:hover .tooltip {
+    .tool-btn:focus .tooltip,
+    .transport-btn:hover .tooltip,
+    .transport-btn:focus .tooltip {
       opacity: 1
+    }
+
+    .tool-btn:focus,
+    .transport-btn:focus,
+    .zoom-btn:focus,
+    .volume-btn:focus,
+    .btn:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0
     }
 
     .main-content {
       flex: 1;
       display: flex;
       flex-direction: column;
-      min-height: 0;
-      overflow: hidden
+      min-height: 0
     }
 
     .waveform-container {
@@ -231,7 +256,6 @@
       display: flex;
       flex-direction: column;
       position: relative;
-      overflow: hidden;
       min-height: 0
     }
 
@@ -251,8 +275,11 @@
     .waveform-area {
       flex: 1;
       position: relative;
-      cursor: crosshair;
       min-height: 0
+    }
+
+    .waveform-area.audio-loaded {
+      cursor: crosshair
     }
 
     #waveformCanvas {
@@ -288,8 +315,7 @@
       border-top: 1px solid var(--border);
       display: flex;
       align-items: stretch;
-      flex-shrink: 0;
-      overflow: visible
+      flex-shrink: 0
     }
 
     .time-section {
@@ -324,8 +350,7 @@
       display: flex;
       align-items: center;
       gap: 16px;
-      padding: 10px 16px;
-      overflow: visible
+      padding: 10px 16px
     }
 
     .transport {
@@ -406,9 +431,7 @@
       background: var(--bg-dark);
       border-radius: 6px;
       padding: 2px;
-      gap: 2px;
-      overflow: visible;
-      position: relative
+      gap: 2px
     }
 
     .zoom-btn {
@@ -469,6 +492,7 @@
 
     .slider {
       -webkit-appearance: none;
+      appearance: none;
       height: 3px;
       background: var(--bg-dark);
       border-radius: 2px;
@@ -477,6 +501,7 @@
 
     .slider::-webkit-slider-thumb {
       -webkit-appearance: none;
+      appearance: none;
       width: 10px;
       height: 10px;
       background: #888;
@@ -500,9 +525,7 @@
       background: var(--bg-dark);
       border-radius: 6px;
       padding: 2px;
-      gap: 2px;
-      overflow: visible;
-      position: relative
+      gap: 2px
     }
 
     .volume-btn {
@@ -748,6 +771,74 @@
       border-color: var(--accent)
     }
 
+    .form-group fieldset {
+      border: none;
+      padding: 0;
+      margin: 0
+    }
+
+    .form-group legend {
+      font-size: 10px;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px
+    }
+
+    .filename-input-group {
+      display: flex;
+      align-items: stretch;
+      position: relative
+    }
+
+    .filename-input-group input {
+      flex: 1;
+      padding-right: 60px
+    }
+
+    .filename-ext {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+      font-size: 12px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      pointer-events: none
+    }
+
+    .format-selector {
+      display: inline-flex;
+      align-items: center;
+      background: var(--bg-dark);
+      border-radius: 6px;
+      padding: 2px;
+      gap: 2px
+    }
+
+    .format-btn {
+      padding: 6px 12px;
+      border-radius: 4px;
+      border: none;
+      background: transparent;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 500;
+      transition: all 0.15s
+    }
+
+    .format-btn:hover {
+      background: var(--bg-elevated);
+      color: var(--text)
+    }
+
+    .format-btn.active {
+      background: var(--bg-elevated);
+      color: var(--text)
+    }
+
     .radio-group {
       display: flex;
       gap: 6px;
@@ -777,13 +868,13 @@
     }
 
     .radio-option input:checked+label {
-      background: var(--accent);
-      color: #fff;
-      border-color: var(--accent)
+      background: var(--bg-elevated);
+      color: var(--text);
+      border-color: transparent
     }
 
     .radio-option label:hover {
-      border-color: var(--accent-dim)
+      background: var(--bg-elevated)
     }
 
     .range-group {
@@ -795,6 +886,7 @@
     .range-group input[type="range"] {
       flex: 1;
       -webkit-appearance: none;
+      appearance: none;
       height: 5px;
       background: var(--bg-dark);
       border-radius: 3px
@@ -802,11 +894,16 @@
 
     .range-group input[type="range"]::-webkit-slider-thumb {
       -webkit-appearance: none;
+      appearance: none;
       width: 14px;
       height: 14px;
-      background: var(--accent);
+      background: #888;
       border-radius: 50%;
       cursor: pointer
+    }
+
+    .range-group input[type="range"]::-webkit-slider-thumb:hover {
+      background: #aaa
     }
 
     .range-value {
@@ -877,6 +974,83 @@
       white-space: nowrap;
       pointer-events: none
     }
+
+    .silence-options {
+      display: flex;
+      flex-direction: column;
+      gap: 14px
+    }
+
+    .btn.recording {
+      background: var(--danger);
+      border-color: var(--danger);
+      color: #fff;
+      animation: pulse-record 1s infinite
+    }
+
+    @keyframes pulse-record {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.5;
+      }
+    }
+
+    .recording-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      gap: 24px
+    }
+
+    .recording-indicator {
+      display: flex;
+      align-items: center;
+      gap: 20px
+    }
+
+    .recording-circle {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--danger);
+      animation: pulse-record 1s infinite;
+      box-shadow: 0 0 20px rgba(255, 68, 102, 0.5)
+    }
+
+    .recording-timer {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 48px;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: -1px
+    }
+
+    .modal-content.wide {
+      width: 420px
+    }
+
+    .github-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-dim);
+      transition: color 0.15s;
+      margin-left: auto
+    }
+
+    .github-link:hover {
+      color: var(--text)
+    }
   </style>
 </head>
 
@@ -937,12 +1111,6 @@
               stroke="currentColor" stroke-width="2">
               <path d="M3 6h18M8 6V4h8v2m1 0v14a2 2 0 01-2 2H9a2 2 0 01-2-2V6" />
             </svg><span class="tooltip">Delete</span></button>
-        </div>
-        <div class="tool-group">
-          <button class="tool-btn" id="trimTool" data-action="trim" disabled><svg viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2">
-              <path d="M9 3v18M15 3v18M3 12h18" />
-            </svg><span class="tooltip">Trim</span></button>
           <button class="tool-btn" id="cropTool" data-action="crop" disabled><svg viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2">
               <path d="M6 3v6M6 3H3M6 3h3M18 3v6M18 3h-3M18 3h3M6 21v-6M6 21H3M6 21h3M18 21v-6M18 21h-3M18 21h3" />
@@ -978,14 +1146,28 @@
               <path d="M11 5L6 9H2v6h4l5 4V5z" />
               <path d="M15 8l6 4-6 4" />
             </svg><span class="tooltip">Amplify</span></button>
+          <button class="tool-btn" id="removeSilenceTool" data-action="removeSilence" disabled><svg viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 12h16" />
+              <path d="M9 6v12" />
+              <path d="M15 6v12" />
+              <line x1="2" y1="2" x2="22" y2="22" stroke-width="2.5" />
+            </svg><span class="tooltip">Remove Silence</span></button>
         </div>
       </div>
+      <a href="https://github.com/tcboni/audio-tool" target="_blank" class="github-link" title="View on GitHub">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+          <path
+            d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+        </svg>
+      </a>
     </header>
     <div class="main-content">
       <div class="waveform-container">
-        <div class="timeline-ruler" id="timelineRuler"><canvas id="rulerCanvas"></canvas></div>
-        <div class="waveform-area" id="waveformArea">
-          <canvas id="waveformCanvas"></canvas>
+        <div class="timeline-ruler" id="timelineRuler"><canvas id="rulerCanvas" aria-hidden="true"></canvas></div>
+        <div class="waveform-area" id="waveformArea" role="img"
+          aria-label="Audio waveform. Click and drag to make a selection.">
+          <canvas id="waveformCanvas" aria-hidden="true"></canvas>
           <div class="playhead" id="playhead" style="left:0;display:none"></div>
           <div class="selection-overlay" id="selection" style="display:none"></div>
           <div class="empty-state" id="emptyState">
@@ -995,19 +1177,20 @@
               <circle cx="18" cy="16" r="3" />
             </svg>
             <h3>No Audio Loaded</h3>
-            <p>Import an audio file or load a sample</p>
+            <p>Import an audio file, record, or load a sample</p>
             <div class="empty-buttons">
               <button class="btn primary" id="emptyImportBtn">Import Audio</button>
+              <button class="btn" id="recordBtn">Record</button>
               <button class="btn" id="loadSampleBtn">Load Sample</button>
             </div>
           </div>
         </div>
       </div>
       <div class="bottom-panel">
-        <div class="time-section">
-          <span class="time-current" id="timeCurrent">00:00.000</span>
-          <span class="time-separator">/</span>
-          <span class="time-total" id="timeTotal">00:00.000</span>
+        <div class="time-section" role="timer" aria-label="Playback time">
+          <span class="time-current" id="timeCurrent" aria-label="Current time">00:00.000</span>
+          <span class="time-separator" aria-hidden="true">/</span>
+          <span class="time-total" id="timeTotal" aria-label="Total duration">00:00.000</span>
         </div>
         <div class="controls-section">
           <div class="transport">
@@ -1087,7 +1270,7 @@
     <div class="status-bar">
       <div class="info"><span id="statusFile">No file</span><span id="statusSampleRate">—</span><span
           id="statusChannels">—</span><span id="statusDuration">—</span></div>
-      <span id="statusMessage">Ready</span>
+      <span id="statusMessage" role="status" aria-live="polite">Ready</span>
     </div>
   </div>
   <div class="drop-zone" id="dropZone">
@@ -1099,41 +1282,89 @@
       <p>MP3, WAV, OGG, FLAC</p>
     </div>
   </div>
-  <div class="modal" id="exportModal">
+  <div class="modal" id="exportModal" role="dialog" aria-labelledby="exportTitle" aria-modal="true">
     <div class="modal-backdrop"></div>
     <div class="modal-content">
-      <h3>Export Audio</h3>
-      <div class="form-group"><label>Filename</label><input type="text" id="exportFilename" value="audio-export"></div>
-      <div class="form-group"><label>Format</label>
-        <div class="radio-group">
-          <div class="radio-option"><input type="radio" name="format" id="fmt-wav" value="wav" checked><label
-              for="fmt-wav">WAV</label></div>
-          <div class="radio-option"><input type="radio" name="format" id="fmt-mp3" value="mp3"><label
-              for="fmt-mp3">MP3</label></div>
-          <div class="radio-option"><input type="radio" name="format" id="fmt-ogg" value="ogg"><label
-              for="fmt-ogg">OGG</label></div>
-          <div class="radio-option"><input type="radio" name="format" id="fmt-webm" value="webm"><label
-              for="fmt-webm">WebM</label></div>
+      <h3 id="exportTitle">Export Audio</h3>
+      <div class="form-group">
+        <label for="exportFilename" id="filenameLabel">Filename</label>
+        <div class="filename-input-group">
+          <input type="text" id="exportFilename" value="audio-export" aria-labelledby="filenameLabel">
+          <span class="filename-ext" id="filenameExt">.wav</span>
         </div>
       </div>
-      <div class="form-group" id="bitrateGroup"><label>Quality</label>
-        <div class="range-group"><input type="range" id="exportBitrate" min="64" max="320" step="32" value="256"><span
-            class="range-value" id="bitrateValue">256 kbps</span></div>
+      <div class="form-group">
+        <label>Format</label>
+        <div class="format-selector" role="radiogroup" aria-label="Export format">
+          <button type="button" class="format-btn active" data-format="wav">WAV</button>
+          <button type="button" class="format-btn" data-format="mp3">MP3</button>
+          <button type="button" class="format-btn" data-format="flac">FLAC</button>
+        </div>
+        <input type="hidden" name="format" id="selectedFormat" value="wav">
       </div>
-      <div class="modal-actions"><button class="btn" id="cancelExport">Cancel</button><button class="btn"
-          id="confirmExport">Export</button></div>
+      <div class="form-group" id="bitrateGroup" style="display:none">
+        <label for="exportBitrate">Quality</label>
+        <div class="range-group">
+          <input type="range" id="exportBitrate" min="64" max="320" step="32" value="192" aria-valuemin="64"
+            aria-valuemax="320" aria-valuenow="192">
+          <span class="range-value" id="bitrateValue" aria-live="polite">192 kbps</span>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" id="cancelExport">Cancel</button>
+        <button class="btn primary" id="confirmExport">Export</button>
+      </div>
     </div>
   </div>
-  <div class="modal" id="amplifyModal">
+  <div class="modal" id="amplifyModal" role="dialog" aria-labelledby="amplifyTitle" aria-modal="true">
     <div class="modal-backdrop"></div>
     <div class="modal-content">
-      <h3>Amplify</h3>
-      <div class="form-group"><label>Gain</label>
-        <div class="range-group"><input type="range" id="amplifySlider" min="-20" max="20" value="0" step="0.5"><span
-            class="range-value" id="amplifyValue">0 dB</span></div>
+      <h3 id="amplifyTitle">Amplify</h3>
+      <div class="form-group">
+        <label for="amplifySlider">Gain</label>
+        <div class="range-group">
+          <input type="range" id="amplifySlider" min="-20" max="20" value="0" step="0.5" aria-valuemin="-20"
+            aria-valuemax="20" aria-valuenow="0">
+          <span class="range-value" id="amplifyValue" aria-live="polite">0 dB</span>
+        </div>
       </div>
-      <div class="modal-actions"><button class="btn" id="cancelAmplify">Cancel</button><button class="btn"
-          id="confirmAmplify">Apply</button></div>
+      <div class="modal-actions">
+        <button class="btn" id="cancelAmplify">Cancel</button>
+        <button class="btn primary" id="confirmAmplify">Apply</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal" id="silenceModal" role="dialog" aria-labelledby="silenceTitle" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <h3 id="silenceTitle">Remove Silence</h3>
+      <div class="silence-options">
+        <div class="form-group">
+          <label for="silenceThreshold">Threshold</label>
+          <div class="range-group">
+            <input type="range" id="silenceThreshold" min="-60" max="-20" value="-40" step="1">
+            <span class="range-value" id="thresholdValue">-40 dB</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="silenceMinDuration">Min Silence Duration</label>
+          <div class="range-group">
+            <input type="range" id="silenceMinDuration" min="100" max="2000" value="500" step="100">
+            <span class="range-value" id="minDurationValue">500 ms</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="silencePadding">Keep Padding</label>
+          <div class="range-group">
+            <input type="range" id="silencePadding" min="0" max="200" value="50" step="10">
+            <span class="range-value" id="paddingValue">50 ms</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" id="cancelSilence">Cancel</button>
+        <button class="btn primary" id="confirmSilence">Remove</button>
+      </div>
     </div>
   </div>
   <input type="file" id="fileInput" accept="audio/*">
@@ -1175,8 +1406,25 @@
         this.dropZone = document.getElementById('dropZone');
         this.exportModal = document.getElementById('exportModal');
         this.amplifyModal = document.getElementById('amplifyModal');
+        this.silenceModal = document.getElementById('silenceModal');
         this.playBtn = document.getElementById('playBtn');
         this.loopBtn = document.getElementById('loopBtn');
+        this.recordBtn = document.getElementById('recordBtn');
+        this.isRecording = false;
+        this.mediaRecorder = null;
+        this.recordedChunks = [];
+        this.stopRecordingBtn = null;
+        this.recordingTimerInterval = null;
+        this.recordingOverlay = null;
+        this.recordingTimerEl = null;
+        this.recordingSource = null;
+        // Set aria-labels from tooltips for accessibility
+        document.querySelectorAll('.tooltip').forEach(t => {
+          const btn = t.parentElement;
+          if (btn && !btn.getAttribute('aria-label')) {
+            btn.setAttribute('aria-label', t.textContent);
+          }
+        });
       }
       initEvents() {
         window.addEventListener('resize', () => this.resizeCanvases());
@@ -1204,13 +1452,24 @@
         document.querySelectorAll('.tool-btn[data-action], .zoom-btn[data-action]').forEach(btn => btn.addEventListener('click', () => this.executeAction(btn.dataset.action)));
         document.getElementById('cancelExport').addEventListener('click', () => this.closeModal(this.exportModal));
         document.getElementById('confirmExport').addEventListener('click', () => this.exportAudio());
-        document.querySelectorAll('input[name="format"]').forEach(r => r.addEventListener('change', (e) => {
-          document.getElementById('bitrateGroup').style.display = e.target.value === 'wav' ? 'none' : 'block';
+        document.querySelectorAll('.format-btn').forEach(btn => btn.addEventListener('click', (e) => {
+          document.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
+          e.target.classList.add('active');
+          const fmt = e.target.dataset.format;
+          document.getElementById('selectedFormat').value = fmt;
+          document.getElementById('bitrateGroup').style.display = fmt === 'mp3' ? 'block' : 'none';
+          document.getElementById('filenameExt').textContent = '.' + fmt;
         }));
         document.getElementById('exportBitrate').addEventListener('input', (e) => document.getElementById('bitrateValue').textContent = e.target.value + ' kbps');
         document.getElementById('cancelAmplify').addEventListener('click', () => this.closeModal(this.amplifyModal));
         document.getElementById('confirmAmplify').addEventListener('click', () => this.applyAmplify());
         document.getElementById('amplifySlider').addEventListener('input', (e) => document.getElementById('amplifyValue').textContent = e.target.value + ' dB');
+        document.getElementById('cancelSilence').addEventListener('click', () => this.closeModal(this.silenceModal));
+        document.getElementById('confirmSilence').addEventListener('click', () => this.applyRemoveSilence());
+        document.getElementById('silenceThreshold').addEventListener('input', (e) => document.getElementById('thresholdValue').textContent = e.target.value + ' dB');
+        document.getElementById('silenceMinDuration').addEventListener('input', (e) => document.getElementById('minDurationValue').textContent = e.target.value + ' ms');
+        document.getElementById('silencePadding').addEventListener('input', (e) => document.getElementById('paddingValue').textContent = e.target.value + ' ms');
+        this.recordBtn.addEventListener('click', () => this.toggleRecording());
         document.querySelectorAll('.modal-backdrop').forEach(b => b.addEventListener('click', (e) => this.closeModal(e.target.closest('.modal'))));
         document.addEventListener('keydown', (e) => this.handleKeyboard(e));
       }
@@ -1286,6 +1545,7 @@
         this.onAudioLoaded('Electronic Sample.wav');
       }
       onAudioLoaded(fn) {
+        this.currentFileName = fn.replace(/\.[^/.]+$/, '');
         this.duration = this.audioBuffer.duration;
         this.playbackPosition = 0; this.playEndPosition = null;
         this.selection = { start: null, end: null };
@@ -1293,6 +1553,7 @@
         this.historyIndex = 0;
         this.emptyState.style.display = 'none';
         this.playhead.style.display = 'block';
+        this.waveformArea.classList.add('audio-loaded');
         this.enableControls(true);
         this.updateStatusBar(fn);
         this.drawWaveform(); this.drawRuler();
@@ -1301,7 +1562,7 @@
         this.setStatus('Ready');
       }
       enableControls(en) {
-        ['playBtn', 'stopBtn', 'skipStartBtn', 'skipEndBtn', 'rewindBtn', 'forwardBtn', 'loopBtn', 'exportBtn', 'normalizeTool', 'reverseTool', 'trimTool', 'cropTool', 'fadeInTool', 'fadeOutTool', 'silenceTool', 'amplifyTool'].forEach(id => document.getElementById(id).disabled = !en);
+        ['playBtn', 'stopBtn', 'skipStartBtn', 'skipEndBtn', 'rewindBtn', 'forwardBtn', 'loopBtn', 'exportBtn', 'normalizeTool', 'reverseTool', 'cropTool', 'fadeInTool', 'fadeOutTool', 'silenceTool', 'amplifyTool', 'removeSilenceTool'].forEach(id => document.getElementById(id).disabled = !en);
         this.updateSelectionTools();
         this.updateHistoryTools();
       }
@@ -1518,7 +1779,13 @@
         this.sourceNode = this.audioContext.createBufferSource();
         this.sourceNode.buffer = this.audioBuffer;
         this.sourceNode.connect(this.splitter);
-        this.splitter.connect(this.analyserL, 0); this.splitter.connect(this.analyserR, 1);
+        if (this.audioBuffer.numberOfChannels === 1) {
+          this.splitter.connect(this.analyserL, 0);
+          this.splitter.connect(this.analyserR, 0);
+        } else {
+          this.splitter.connect(this.analyserL, 0);
+          this.splitter.connect(this.analyserR, 1);
+        }
         this.sourceNode.connect(this.gainNode);
         let startPos = this.playbackPosition, endPos = this.duration;
         if (this.hasValidSelection()) {
@@ -1572,12 +1839,27 @@
         this.updatePlayhead(); this.updateTimeDisplay();
         if (was) this.play();
       }
-      toggleLoop() { this.isLooping = !this.isLooping; this.loopBtn.classList.toggle('active', this.isLooping); }
+      toggleLoop() {
+        this.isLooping = !this.isLooping;
+        this.loopBtn.classList.toggle('active', this.isLooping);
+        if (this.isPlaying) {
+          this.playbackPosition = this.audioContext.currentTime - this.startTime;
+          if (this.playbackPosition > this.duration) this.playbackPosition = this.playbackPosition % this.duration;
+          this.stopCurrentPlayback();
+          this.play();
+        }
+      }
+      selectAll() {
+        if (!this.audioBuffer) return;
+        this.selection.start = 0; this.selection.end = this.duration;
+        this.updateSelection();
+      }
       handleKeyboard(e) {
         if (e.target.tagName === 'INPUT') return;
         if (e.code === 'Escape') {
           if (this.exportModal.classList.contains('active')) this.closeModal(this.exportModal);
           if (this.amplifyModal.classList.contains('active')) this.closeModal(this.amplifyModal);
+          if (this.silenceModal.classList.contains('active')) this.closeModal(this.silenceModal);
           return;
         }
         const k = e.code;
@@ -1589,7 +1871,6 @@
         else if (k === 'Equal' || k === 'NumpadAdd') this.setZoom(this.zoom * 1.15);
         else if (k === 'Minus' || k === 'NumpadSubtract') this.setZoom(this.zoom / 1.15);
         else if (k === 'KeyL') this.toggleLoop();
-        else if (k === 'KeyT') this.executeAction('trim');
         else if (k === 'KeyC' && (e.ctrlKey || e.metaKey)) this.executeAction('copy');
         else if (k === 'KeyC') this.executeAction('crop');
         else if (k === 'KeyX' && (e.ctrlKey || e.metaKey)) this.executeAction('cut');
@@ -1600,7 +1881,8 @@
         else if (k === 'KeyO') this.executeAction('fadeOut');
         else if (k === 'KeyN') this.executeAction('normalize');
         else if (k === 'KeyR') this.executeAction('reverse');
-        else if (k === 'KeyA' && !(e.ctrlKey || e.metaKey)) this.executeAction('amplify');
+        else if (k === 'KeyA' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); this.selectAll(); }
+        else if (k === 'KeyA') this.executeAction('amplify');
       }
       getOrSelectAll() {
         if (this.hasValidSelection()) return this.getSelectionRange();
@@ -1617,7 +1899,6 @@
           case 'copy': this.copySelection(); break;
           case 'paste': this.pasteClipboard(); break;
           case 'delete': this.deleteSelection(); break;
-          case 'trim': this.trimSelection(); break;
           case 'crop': this.cropToSelection(); break;
           case 'fadeIn': this.applyFadeIn(); break;
           case 'fadeOut': this.applyFadeOut(); break;
@@ -1625,6 +1906,7 @@
           case 'reverse': this.applyReverse(); break;
           case 'silence': this.applySilence(); break;
           case 'amplify': this.showAmplifyModal(); break;
+          case 'removeSilence': this.showSilenceModal(); break;
         }
       }
       getSelectionRange() {
@@ -1712,13 +1994,6 @@
         }
         this.audioBuffer = nb; this.duration = this.audioBuffer.duration;
       }
-      trimSelection() {
-        const r = this.getSelectionRange();
-        if (!r) { this.setStatus('Select a region to trim'); return; }
-        this.saveToHistory();
-        this.deleteRegion(r.startSample, r.endSample);
-        this.refreshAfterEdit(); this.setStatus('Trimmed (selection removed)');
-      }
       cropToSelection() {
         const r = this.getOrSelectAll();
         this.saveToHistory();
@@ -1746,17 +2021,18 @@
         this.drawWaveform(); this.setStatus('Fade out');
       }
       applyNormalize() {
+        const r = this.getOrSelectAll();
         this.saveToHistory();
         let max = 0;
         for (let c = 0; c < this.audioBuffer.numberOfChannels; c++) {
           const d = this.audioBuffer.getChannelData(c);
-          for (let i = 0; i < d.length; i++) max = Math.max(max, Math.abs(d[i]));
+          for (let i = r.startSample; i < r.endSample; i++) max = Math.max(max, Math.abs(d[i]));
         }
         if (max > 0) {
           const g = 0.99 / max;
           for (let c = 0; c < this.audioBuffer.numberOfChannels; c++) {
             const d = this.audioBuffer.getChannelData(c);
-            for (let i = 0; i < d.length; i++) d[i] *= g;
+            for (let i = r.startSample; i < r.endSample; i++) d[i] *= g;
           }
         }
         this.drawWaveform(); this.setStatus('Normalized');
@@ -1798,22 +2074,40 @@
       }
       showExportModal() {
         if (!this.audioBuffer) return;
-        document.getElementById('exportFilename').value = 'audio-export';
-        document.getElementById('fmt-wav').checked = true;
+        document.getElementById('exportFilename').value = this.currentFileName || 'audio';
+        document.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector('.format-btn[data-format="wav"]').classList.add('active');
+        document.getElementById('selectedFormat').value = 'wav';
+        document.getElementById('filenameExt').textContent = '.wav';
         document.getElementById('bitrateGroup').style.display = 'none';
         this.exportModal.classList.add('active');
       }
       async exportAudio() {
         const fn = document.getElementById('exportFilename').value || 'audio-export';
+        const fmt = document.getElementById('selectedFormat').value;
         this.setStatus('Exporting...');
         try {
-          const blob = this.encodeWAV(this.audioBuffer);
+          let blob, ext;
+          const bitrate = parseInt(document.getElementById('exportBitrate').value);
+          switch (fmt) {
+            case 'mp3':
+              blob = this.encodeMP3(this.audioBuffer, bitrate);
+              ext = 'mp3';
+              break;
+            case 'flac':
+              blob = await this.encodeFLAC(this.audioBuffer);
+              ext = 'flac';
+              break;
+            default:
+              blob = this.encodeWAV(this.audioBuffer);
+              ext = 'wav';
+          }
           const url = URL.createObjectURL(blob), a = document.createElement('a');
-          a.href = url; a.download = fn + '.wav'; a.click();
+          a.href = url; a.download = fn + '.' + ext; a.click();
           URL.revokeObjectURL(url);
           this.closeModal(this.exportModal);
-          this.setStatus('Exported: ' + fn + '.wav');
-        } catch (e) { this.setStatus('Export error'); }
+          this.setStatus('Exported: ' + fn + '.' + ext);
+        } catch (e) { this.setStatus('Export error: ' + e.message); console.error(e); }
       }
       encodeWAV(buf) {
         const nc = buf.numberOfChannels, sr = buf.sampleRate, bd = 16, bps = bd / 8, ba = nc * bps;
@@ -1833,6 +2127,243 @@
           }
         }
         return new Blob([ab], { type: 'audio/wav' });
+      }
+      encodeMP3(buf, bitrate) {
+        const nc = buf.numberOfChannels, sr = buf.sampleRate, len = buf.length;
+        const mp3enc = new lamejs.Mp3Encoder(nc, sr, bitrate);
+        const mp3Data = [];
+        const sampleBlockSize = 1152;
+        const left = buf.getChannelData(0);
+        const right = nc > 1 ? buf.getChannelData(1) : left;
+        const leftInt = new Int16Array(len);
+        const rightInt = new Int16Array(len);
+        for (let i = 0; i < len; i++) {
+          leftInt[i] = Math.max(-32768, Math.min(32767, Math.floor(left[i] * 32767)));
+          rightInt[i] = Math.max(-32768, Math.min(32767, Math.floor(right[i] * 32767)));
+        }
+        for (let i = 0; i < len; i += sampleBlockSize) {
+          const leftChunk = leftInt.subarray(i, Math.min(i + sampleBlockSize, len));
+          const rightChunk = rightInt.subarray(i, Math.min(i + sampleBlockSize, len));
+          const mp3buf = nc > 1 ? mp3enc.encodeBuffer(leftChunk, rightChunk) : mp3enc.encodeBuffer(leftChunk);
+          if (mp3buf.length > 0) mp3Data.push(mp3buf);
+        }
+        const mp3End = mp3enc.flush();
+        if (mp3End.length > 0) mp3Data.push(mp3End);
+        return new Blob(mp3Data, { type: 'audio/mp3' });
+      }
+      async encodeFLAC(buf) {
+        return new Promise((resolve, reject) => {
+          try {
+            if (typeof Flac === 'undefined') {
+              reject(new Error('FLAC encoder not loaded'));
+              return;
+            }
+            Flac.onready = () => {
+              const encoder = Flac.create_libflac_encoder(buf.sampleRate, buf.numberOfChannels, 16, 5);
+              if (!encoder) {
+                reject(new Error('Failed to create FLAC encoder'));
+                return;
+              }
+              const flacData = [];
+              const writeCallback = (buffer, bytes) => {
+                flacData.push(new Uint8Array(buffer.slice(0, bytes)));
+              };
+              Flac.init_encoder_stream(encoder, writeCallback);
+              const left = buf.getChannelData(0);
+              const right = buf.numberOfChannels > 1 ? buf.getChannelData(1) : left;
+              const samples = new Int32Array(left.length * buf.numberOfChannels);
+              for (let i = 0; i < left.length; i++) {
+                samples[i * buf.numberOfChannels] = Math.floor(left[i] * 32767);
+                if (buf.numberOfChannels > 1) {
+                  samples[i * buf.numberOfChannels + 1] = Math.floor(right[i] * 32767);
+                }
+              }
+              Flac.FLAC__stream_encoder_process_interleaved(encoder, samples, left.length);
+              Flac.FLAC__stream_encoder_finish(encoder);
+              Flac.FLAC__stream_encoder_delete(encoder);
+              const blob = new Blob(flacData, { type: 'audio/flac' });
+              resolve(blob);
+            };
+            if (Flac.isReady()) Flac.onready();
+          } catch (e) {
+            reject(e);
+          }
+        });
+      }
+      showSilenceModal() {
+        document.getElementById('silenceThreshold').value = -40;
+        document.getElementById('thresholdValue').textContent = '-40 dB';
+        document.getElementById('silenceMinDuration').value = 500;
+        document.getElementById('minDurationValue').textContent = '500 ms';
+        document.getElementById('silencePadding').value = 50;
+        document.getElementById('paddingValue').textContent = '50 ms';
+        this.silenceModal.classList.add('active');
+      }
+      applyRemoveSilence() {
+        const thresholdDb = parseFloat(document.getElementById('silenceThreshold').value);
+        const minDurationMs = parseFloat(document.getElementById('silenceMinDuration').value);
+        const paddingMs = parseFloat(document.getElementById('silencePadding').value);
+        const threshold = Math.pow(10, thresholdDb / 20);
+        const sr = this.audioBuffer.sampleRate;
+        const minSamples = Math.floor(minDurationMs * sr / 1000);
+        const paddingSamples = Math.floor(paddingMs * sr / 1000);
+        const windowSize = Math.floor(sr * 0.02);
+        this.saveToHistory();
+        const channels = [];
+        for (let c = 0; c < this.audioBuffer.numberOfChannels; c++) {
+          channels.push(this.audioBuffer.getChannelData(c));
+        }
+        const getRMS = (start, end) => {
+          let sum = 0, count = 0;
+          for (let i = start; i < end && i < channels[0].length; i++) {
+            for (let c = 0; c < channels.length; c++) {
+              sum += channels[c][i] * channels[c][i];
+              count++;
+            }
+          }
+          return count > 0 ? Math.sqrt(sum / count) : 0;
+        };
+        const silentRegions = [];
+        let silentStart = null;
+        for (let i = 0; i < channels[0].length; i += windowSize) {
+          const rms = getRMS(i, i + windowSize);
+          const isSilent = rms < threshold;
+          if (isSilent && silentStart === null) {
+            silentStart = i;
+          } else if (!isSilent && silentStart !== null) {
+            if (i - silentStart >= minSamples) {
+              const start = Math.min(channels[0].length, silentStart + paddingSamples);
+              const end = Math.max(0, i - paddingSamples);
+              if (end > start) silentRegions.push({ start, end });
+            }
+            silentStart = null;
+          }
+        }
+        if (silentStart !== null && channels[0].length - silentStart >= minSamples) {
+          const start = Math.min(channels[0].length, silentStart + paddingSamples);
+          if (channels[0].length > start) silentRegions.push({ start, end: channels[0].length });
+        }
+        if (silentRegions.length === 0) {
+          this.closeModal(this.silenceModal);
+          this.setStatus('No silence regions found');
+          return;
+        }
+        const keep = [];
+        let pos = 0;
+        for (const region of silentRegions) {
+          if (region.start > pos) keep.push({ start: pos, end: region.start });
+          pos = region.end;
+        }
+        if (pos < channels[0].length) keep.push({ start: pos, end: channels[0].length });
+        if (keep.length === 0 || keep.reduce((s, r) => s + (r.end - r.start), 0) === 0) {
+          this.closeModal(this.silenceModal);
+          this.setStatus('Cannot remove all audio');
+          return;
+        }
+        let newLen = 0;
+        keep.forEach(r => newLen += r.end - r.start);
+        const nb = this.audioContext.createBuffer(this.audioBuffer.numberOfChannels, newLen, sr);
+        for (let c = 0; c < this.audioBuffer.numberOfChannels; c++) {
+          const od = this.audioBuffer.getChannelData(c);
+          const nd = nb.getChannelData(c);
+          let writePos = 0;
+          for (const region of keep) {
+            nd.set(od.subarray(region.start, region.end), writePos);
+            writePos += region.end - region.start;
+          }
+        }
+        this.audioBuffer = nb;
+        this.duration = this.audioBuffer.duration;
+        this.closeModal(this.silenceModal);
+        this.refreshAfterEdit();
+        this.setStatus('Removed ' + silentRegions.length + ' silent region(s)');
+      }
+      async toggleRecording() {
+        if (this.isRecording) {
+          this.stopRecording();
+        } else {
+          await this.startRecording();
+        }
+      }
+      async startRecording() {
+        try {
+          if (this.audioContext.state === 'suspended') await this.audioContext.resume();
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          this.recordedChunks = [];
+          this.recordingStartTime = Date.now();
+          this.mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+          this.mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) this.recordedChunks.push(e.data);
+          };
+          this.mediaRecorder.onstop = async () => {
+            stream.getTracks().forEach(t => t.stop());
+            if (this.recordingSource) {
+              this.recordingSource.disconnect();
+              this.recordingSource = null;
+            }
+            const blob = new Blob(this.recordedChunks, { type: 'audio/webm' });
+            const ab = await blob.arrayBuffer();
+            this.audioBuffer = await this.audioContext.decodeAudioData(ab);
+            this.onAudioLoaded('recording');
+          };
+          this.recordingSource = this.audioContext.createMediaStreamSource(stream);
+          this.recordingSource.connect(this.analyserL);
+          this.recordingSource.connect(this.analyserR);
+          const overlay = document.createElement('div');
+          overlay.className = 'recording-overlay';
+          const indicator = document.createElement('div');
+          indicator.className = 'recording-indicator';
+          const circle = document.createElement('div');
+          circle.className = 'recording-circle';
+          const timer = document.createElement('div');
+          timer.className = 'recording-timer';
+          timer.id = 'recordingTimer';
+          timer.textContent = '00:00.000';
+          indicator.appendChild(circle);
+          indicator.appendChild(timer);
+          const stopBtn = document.createElement('button');
+          stopBtn.className = 'btn recording';
+          stopBtn.textContent = 'Stop Recording';
+          stopBtn.addEventListener('click', () => this.stopRecording());
+          overlay.appendChild(indicator);
+          overlay.appendChild(stopBtn);
+          document.body.appendChild(overlay);
+          this.recordingOverlay = overlay;
+          this.stopRecordingBtn = stopBtn;
+          this.recordingTimerEl = timer;
+          this.mediaRecorder.start(100);
+          this.isRecording = true;
+          this.updateRecordingTimer();
+          this.setStatus('Recording...');
+        } catch (e) {
+          this.setStatus('Microphone access denied');
+          console.error(e);
+        }
+      }
+      updateRecordingTimer() {
+        if (!this.isRecording || !this.recordingTimerEl) return;
+        const elapsed = (Date.now() - this.recordingStartTime) / 1000;
+        this.recordingTimerEl.textContent = this.formatTime(elapsed);
+        requestAnimationFrame(() => this.updateRecordingTimer());
+      }
+      stopRecording() {
+        if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+          this.mediaRecorder.stop();
+        }
+        this.isRecording = false;
+        if (this.recordingSource) {
+          this.recordingSource.disconnect();
+          this.recordingSource = null;
+        }
+        if (this.recordingOverlay) {
+          this.recordingOverlay.remove();
+          this.recordingOverlay = null;
+        }
+        this.stopRecordingBtn = null;
+        this.recordingTimerEl = null;
+        this.recordBtn.classList.remove('recording');
+        this.recordBtn.textContent = 'Record';
+        this.setStatus('Processing recording...');
       }
       animate() {
         if (this.isPlaying) {
@@ -1864,7 +2395,7 @@
         requestAnimationFrame(() => this.animate());
       }
       updateVUMeters() {
-        if (!this.isPlaying) {
+        if (!this.isPlaying && !this.isRecording) {
           this.peakL *= 0.92; this.peakR *= 0.92;
           this.vuLeft.style.width = '0'; this.vuRight.style.width = '0';
           this.vuPeakLeft.style.left = (this.peakL * 100) + '%';
