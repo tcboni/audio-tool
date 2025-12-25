@@ -49,10 +49,10 @@
 
     header {
       background: linear-gradient(180deg, var(--bg-panel) 0%, var(--bg-surface) 100%);
-      padding: 8px 16px;
+      padding: 10px 18px;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
       border-bottom: 1px solid var(--border);
       flex-shrink: 0
     }
@@ -64,12 +64,12 @@
     }
 
     .logo svg {
-      width: 26px;
-      height: 26px
+      width: 28px;
+      height: 28px
     }
 
     .logo h1 {
-      font-size: 16px;
+      font-size: 17px;
       font-weight: 700;
       background: linear-gradient(135deg, var(--accent), #5bc4ce);
       -webkit-background-clip: text;
@@ -84,22 +84,22 @@
 
     .file-actions {
       display: flex;
-      gap: 5px
+      gap: 6px
     }
 
     .btn {
       background: var(--bg-elevated);
       border: 1px solid var(--border);
       color: var(--text);
-      padding: 6px 12px;
-      border-radius: 5px;
+      padding: 7px 14px;
+      border-radius: 6px;
       cursor: pointer;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 500;
       transition: all 0.15s;
       display: flex;
       align-items: center;
-      gap: 5px
+      gap: 6px
     }
 
     .btn:hover {
@@ -127,8 +127,8 @@
     }
 
     .btn svg {
-      width: 13px;
-      height: 13px
+      width: 14px;
+      height: 14px
     }
 
     .toolbar {
@@ -142,9 +142,13 @@
     .tool-group {
       display: flex;
       align-items: center;
-      gap: 1px;
-      padding: 0 6px;
+      gap: 2px;
+      padding: 0 8px;
       border-right: 1px solid var(--border)
+    }
+
+    .tool-group:first-child {
+      padding-left: 0
     }
 
     .tool-group:last-child {
@@ -152,9 +156,9 @@
     }
 
     .tool-btn {
-      width: 28px;
-      height: 28px;
-      border-radius: 5px;
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
       border: none;
       background: transparent;
       color: var(--text-dim);
@@ -284,20 +288,21 @@
       border-top: 1px solid var(--border);
       display: flex;
       align-items: stretch;
-      flex-shrink: 0
+      flex-shrink: 0;
+      overflow: visible
     }
 
     .time-section {
       display: flex;
       align-items: center;
-      padding: 8px 16px;
+      padding: 10px 18px;
       border-right: 1px solid var(--border);
-      gap: 6px
+      gap: 8px
     }
 
     .time-current {
       font-family: 'SF Mono', 'Fira Code', monospace;
-      font-size: 18px;
+      font-size: 20px;
       font-weight: 600;
       color: #fff;
       letter-spacing: -0.5px
@@ -305,32 +310,33 @@
 
     .time-separator {
       color: var(--text-dim);
-      font-size: 14px;
+      font-size: 15px;
       margin: 0 2px
     }
 
     .time-total {
       font-family: 'SF Mono', 'Fira Code', monospace;
-      font-size: 12px;
+      font-size: 13px;
       color: var(--text-dim)
     }
 
     .controls-section {
       display: flex;
       align-items: center;
-      gap: 14px;
-      padding: 8px 14px
+      gap: 16px;
+      padding: 10px 16px;
+      overflow: visible
     }
 
     .transport {
       display: flex;
       align-items: center;
-      gap: 3px
+      gap: 4px
     }
 
     .transport-btn {
-      width: 32px;
-      height: 32px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       border: none;
       background: var(--bg-elevated);
@@ -373,13 +379,13 @@
     }
 
     .transport-btn svg {
-      width: 14px;
-      height: 14px
+      width: 16px;
+      height: 16px
     }
 
     .transport-btn .tooltip {
       left: 50%;
-      top: -28px
+      top: -30px
     }
 
     .control-group {
@@ -400,12 +406,14 @@
       background: var(--bg-dark);
       border-radius: 6px;
       padding: 2px;
-      gap: 2px
+      gap: 2px;
+      overflow: visible;
+      position: relative
     }
 
     .zoom-btn {
-      width: 26px;
-      height: 26px;
+      width: 28px;
+      height: 28px;
       border-radius: 4px;
       border: none;
       background: transparent;
@@ -424,13 +432,13 @@
     }
 
     .zoom-btn svg {
-      width: 14px;
-      height: 14px
+      width: 15px;
+      height: 15px
     }
 
     .zoom-btn .tooltip {
       position: absolute;
-      top: 36px;
+      top: -32px;
       left: 50%;
       transform: translateX(-50%);
       background: var(--bg-dark);
@@ -442,7 +450,7 @@
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.15s;
-      z-index: 100;
+      z-index: 1000;
       border: 1px solid var(--border)
     }
 
@@ -452,11 +460,11 @@
 
     .zoom-value {
       font-family: 'SF Mono', 'Fira Code', monospace;
-      font-size: 11px;
+      font-size: 12px;
       color: var(--text);
-      min-width: 36px;
+      min-width: 38px;
       text-align: center;
-      padding: 0 4px
+      padding: 0 5px
     }
 
     .slider {
@@ -486,24 +494,82 @@
       min-width: 28px
     }
 
-    .volume-group {
+    .volume-control {
       display: flex;
       align-items: center;
-      gap: 6px;
-      flex: 1
+      background: var(--bg-dark);
+      border-radius: 6px;
+      padding: 2px;
+      gap: 2px;
+      overflow: visible;
+      position: relative
     }
 
-    .volume-group .slider {
-      flex: 1;
-      min-width: 80px;
-      max-width: 200px
+    .volume-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 4px;
+      border: none;
+      background: transparent;
+      color: var(--text-dim);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      position: relative
+    }
+
+    .volume-btn:hover {
+      background: var(--bg-elevated);
+      color: var(--text)
+    }
+
+    .volume-btn.muted {
+      color: var(--danger)
+    }
+
+    .volume-btn svg {
+      width: 14px;
+      height: 14px
+    }
+
+    .volume-btn .tooltip {
+      position: absolute;
+      top: -32px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-dark);
+      color: var(--text);
+      padding: 4px 7px;
+      border-radius: 4px;
+      font-size: 10px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s;
+      z-index: 1000;
+      border: 1px solid var(--border)
+    }
+
+    .volume-btn:hover .tooltip {
+      opacity: 1
+    }
+
+    .volume-value {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 12px;
+      color: var(--text);
+      min-width: 40px;
+      text-align: center;
+      padding: 0 5px
     }
 
     .vu-section {
       display: flex;
       flex-direction: column;
-      gap: 3px;
-      padding: 6px 14px;
+      gap: 4px;
+      padding: 8px 16px;
       border-left: 1px solid var(--border);
       flex: 1;
       min-width: 150px
@@ -524,9 +590,9 @@
 
     .vu-bar-container {
       flex: 1;
-      height: 10px;
+      height: 12px;
       background: var(--bg-dark);
-      border-radius: 2px;
+      border-radius: 3px;
       position: relative;
       overflow: hidden;
       border: 1px solid var(--border)
@@ -984,13 +1050,17 @@
                 <path d="M11 8v6M8 11h6" />
               </svg><span class="tooltip">Zoom In (+)</span></button>
           </div>
-          <div class="volume-group">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2">
-              <path d="M11 5L6 9H2v6h4l5 4V5z" />
-              <path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07" />
-            </svg>
-            <input type="range" class="slider" id="volumeSlider" min="0" max="100" value="100">
-            <span class="control-value" id="volumeLevel">100%</span>
+          <div class="volume-control">
+            <button class="volume-btn" id="volumeDownBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2">
+                <path d="M11 5L6 9H2v6h4l5 4V5z" />
+              </svg><span class="tooltip">Volume Down</span></button>
+            <span class="volume-value" id="volumeLevel">100%</span>
+            <button class="volume-btn" id="volumeUpBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2">
+                <path d="M11 5L6 9H2v6h4l5 4V5z" />
+                <path d="M15.54 8.46a5 5 0 010 7.07" />
+              </svg><span class="tooltip">Volume Up</span></button>
           </div>
         </div>
         <div class="vu-section">
@@ -1099,7 +1169,8 @@
         this.vuRight = document.getElementById('vuRight');
         this.vuPeakLeft = document.getElementById('vuPeakLeft');
         this.vuPeakRight = document.getElementById('vuPeakRight');
-        this.volumeSlider = document.getElementById('volumeSlider');
+        this.volumeLevel = document.getElementById('volumeLevel');
+        this.volume = 1;
         this.fileInput = document.getElementById('fileInput');
         this.dropZone = document.getElementById('dropZone');
         this.exportModal = document.getElementById('exportModal');
@@ -1124,7 +1195,8 @@
         document.getElementById('rewindBtn').addEventListener('click', () => this.seekRelative(-5));
         document.getElementById('forwardBtn').addEventListener('click', () => this.seekRelative(5));
         this.loopBtn.addEventListener('click', () => this.toggleLoop());
-        this.volumeSlider.addEventListener('input', (e) => this.setVolume(parseFloat(e.target.value) / 100));
+        document.getElementById('volumeDownBtn').addEventListener('click', () => this.adjustVolume(-0.1));
+        document.getElementById('volumeUpBtn').addEventListener('click', () => this.adjustVolume(0.1));
         this.waveformArea.addEventListener('mousedown', (e) => this.onWaveformMouseDown(e));
         this.waveformArea.addEventListener('mousemove', (e) => this.onWaveformMouseMove(e));
         window.addEventListener('mouseup', (e) => this.onWaveformMouseUp(e));
@@ -1424,7 +1496,14 @@
         this.scrollOffset = Math.max(0, Math.min(this.duration - visDur, this.scrollOffset));
         this.drawWaveform(); this.drawRuler(); this.updatePlayhead(); this.updateSelection();
       }
-      setVolume(v) { if (this.gainNode) this.gainNode.gain.value = v; document.getElementById('volumeLevel').textContent = Math.round(v * 100) + '%'; }
+      setVolume(v) {
+        this.volume = Math.max(0, Math.min(1, v));
+        if (this.gainNode) this.gainNode.gain.value = this.volume;
+        this.volumeLevel.textContent = Math.round(this.volume * 100) + '%';
+      }
+      adjustVolume(delta) {
+        this.setVolume(this.volume + delta);
+      }
       stopCurrentPlayback() {
         if (this.sourceNode) { try { this.sourceNode.onended = null; this.sourceNode.stop(); } catch (e) { } this.sourceNode = null; }
         this.isPlaying = false;
@@ -1538,8 +1617,8 @@
           case 'copy': this.copySelection(); break;
           case 'paste': this.pasteClipboard(); break;
           case 'delete': this.deleteSelection(); break;
-          case 'trim': this.trimToSelection(); break;
-          case 'crop': this.trimToSelection(); break;
+          case 'trim': this.trimSelection(); break;
+          case 'crop': this.cropToSelection(); break;
           case 'fadeIn': this.applyFadeIn(); break;
           case 'fadeOut': this.applyFadeOut(); break;
           case 'normalize': this.applyNormalize(); break;
@@ -1633,13 +1712,20 @@
         }
         this.audioBuffer = nb; this.duration = this.audioBuffer.duration;
       }
-      trimToSelection() {
+      trimSelection() {
+        const r = this.getSelectionRange();
+        if (!r) { this.setStatus('Select a region to trim'); return; }
+        this.saveToHistory();
+        this.deleteRegion(r.startSample, r.endSample);
+        this.refreshAfterEdit(); this.setStatus('Trimmed (selection removed)');
+      }
+      cropToSelection() {
         const r = this.getOrSelectAll();
         this.saveToHistory();
         this.audioBuffer = this.extractRegion(r.startSample, r.endSample);
         this.duration = this.audioBuffer.duration;
         this.playbackPosition = 0; this.scrollOffset = 0;
-        this.refreshAfterEdit(); this.setStatus('Trimmed');
+        this.refreshAfterEdit(); this.setStatus('Cropped (kept selection only)');
       }
       applyFadeIn() {
         const r = this.getOrSelectAll();
