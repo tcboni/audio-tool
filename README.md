@@ -71,3 +71,4 @@ Built with vanilla HTML, CSS, and JavaScript. Uses:
 - [MediaRecorder API](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder) for recording
 - [lamejs](https://github.com/zhuker/lamejs) for MP3 encoding
 - [libflac.js](https://github.com/nickarbon/libflac.js) for FLAC encoding
+

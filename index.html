@@ -856,14 +856,17 @@
 
     .radio-option label {
       display: block;
-      padding: 8px 10px;
+      padding: 9px 12px;
       background: var(--bg-dark);
       border: 1px solid var(--border);
       border-radius: 5px;
       text-align: center;
       cursor: pointer;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 500;
+      text-transform: none;
+      letter-spacing: normal;
+      white-space: nowrap;
       transition: all 0.15s
     }
 
@@ -1367,6 +1370,38 @@
       </div>
     </div>
   </div>
+  <div class="modal" id="importModal" role="dialog" aria-labelledby="importTitle" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content wide">
+      <h3 id="importTitle">Import Audio</h3>
+      <div class="form-group">
+        <label>File</label>
+        <div id="importFileInfo" style="font-size:12px;color:var(--text-dim)">—</div>
+      </div>
+      <div class="form-group">
+        <fieldset>
+          <legend>How to add</legend>
+          <div class="radio-group">
+            <div class="radio-option"><input type="radio" name="importMode" id="modeReplace" value="replace"><label for="modeReplace">Replace</label></div>
+            <div class="radio-option"><input type="radio" name="importMode" id="modeBegin" value="begin" checked><label for="modeBegin">At beginning</label></div>
+            <div class="radio-option"><input type="radio" name="importMode" id="modePlayhead" value="playhead"><label for="modePlayhead">At playhead</label></div>
+            <div class="radio-option"><input type="radio" name="importMode" id="modeEnd" value="end"><label for="modeEnd">At end</label></div>
+          </div>
+        </fieldset>
+      </div>
+      <div class="form-group" id="crossfadeGroup">
+        <label style="display:flex;align-items:center;gap:6px;text-transform:none;letter-spacing:0;font-size:11px;color:var(--text)"><input type="checkbox" id="crossfadeEnabled"> Crossfade</label>
+        <div class="range-group" id="crossfadeDurationGroup" style="display:none;margin-top:8px">
+          <input type="range" id="crossfadeDuration" min="50" max="5000" value="500" step="50">
+          <span class="range-value" id="crossfadeValue">500 ms</span>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" id="cancelImport">Cancel</button>
+        <button class="btn primary" id="confirmImport">Add</button>
+      </div>
+    </div>
+  </div>
   <input type="file" id="fileInput" accept="audio/*">
   <script>
     const MIN_SELECTION_MS = 50;
@@ -1377,6 +1412,7 @@
         this.isPlaying = false; this.startTime = 0; this.playbackPosition = 0; this.playEndPosition = null;
         this.duration = 0; this.zoom = 1; this.scrollOffset = 0;
         this.selection = { start: null, end: null }; this.clipboard = null;
+        this.pendingImport = null;
         this.isLooping = false; this.isSelecting = false;
         this.history = []; this.historyIndex = -1;
         this.peakL = 0; this.peakR = 0; this.peakDecay = 0.93;
@@ -1407,6 +1443,7 @@
         this.exportModal = document.getElementById('exportModal');
         this.amplifyModal = document.getElementById('amplifyModal');
         this.silenceModal = document.getElementById('silenceModal');
+        this.importModal = document.getElementById('importModal');
         this.playBtn = document.getElementById('playBtn');
         this.loopBtn = document.getElementById('loopBtn');
         this.recordBtn = document.getElementById('recordBtn');
@@ -1435,7 +1472,7 @@
         this.fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
         document.body.addEventListener('dragover', (e) => { e.preventDefault(); this.dropZone.classList.add('active'); });
         document.body.addEventListener('dragleave', (e) => { if (e.target === this.dropZone) this.dropZone.classList.remove('active'); });
-        document.body.addEventListener('drop', (e) => { e.preventDefault(); this.dropZone.classList.remove('active'); if (e.dataTransfer.files.length) this.loadFile(e.dataTransfer.files[0]); });
+        document.body.addEventListener('drop', (e) => { e.preventDefault(); this.dropZone.classList.remove('active'); if (e.dataTransfer.files.length) this.handleIncomingFile(e.dataTransfer.files[0]); });
         this.playBtn.addEventListener('click', () => this.togglePlay());
         document.getElementById('stopBtn').addEventListener('click', () => this.stop());
         document.getElementById('skipStartBtn').addEventListener('click', () => this.skipToStart());
@@ -1469,8 +1506,16 @@
         document.getElementById('silenceThreshold').addEventListener('input', (e) => document.getElementById('thresholdValue').textContent = e.target.value + ' dB');
         document.getElementById('silenceMinDuration').addEventListener('input', (e) => document.getElementById('minDurationValue').textContent = e.target.value + ' ms');
         document.getElementById('silencePadding').addEventListener('input', (e) => document.getElementById('paddingValue').textContent = e.target.value + ' ms');
+        document.getElementById('cancelImport').addEventListener('click', () => this.cancelImport());
+        document.getElementById('confirmImport').addEventListener('click', () => this.confirmImport());
+        document.querySelectorAll('input[name="importMode"]').forEach(r => r.addEventListener('change', () => this.updateImportModalState()));
+        document.getElementById('crossfadeEnabled').addEventListener('change', () => this.updateImportModalState());
+        document.getElementById('crossfadeDuration').addEventListener('input', (e) => document.getElementById('crossfadeValue').textContent = e.target.value + ' ms');
         this.recordBtn.addEventListener('click', () => this.toggleRecording());
-        document.querySelectorAll('.modal-backdrop').forEach(b => b.addEventListener('click', (e) => this.closeModal(e.target.closest('.modal'))));
+        document.querySelectorAll('.modal-backdrop').forEach(b => b.addEventListener('click', (e) => {
+          const m = e.target.closest('.modal');
+          if (m === this.importModal) this.cancelImport(); else this.closeModal(m);
+        }));
         document.addEventListener('keydown', (e) => this.handleKeyboard(e));
       }
       closeModal(modal) { modal.classList.remove('active'); }
@@ -1491,7 +1536,162 @@
           this.onAudioLoaded(file.name);
         } catch (e) { this.setStatus('Error: ' + e.message); }
       }
-      handleFileSelect(e) { if (e.target.files.length) this.loadFile(e.target.files[0]); }
+      handleFileSelect(e) {
+        if (e.target.files.length) this.handleIncomingFile(e.target.files[0]);
+        e.target.value = '';
+      }
+      async handleIncomingFile(file) {
+        if (!this.audioBuffer) return this.loadFile(file);
+        try {
+          this.setStatus('Decoding...');
+          const ab = await file.arrayBuffer();
+          const decoded = await this.audioContext.decodeAudioData(ab);
+          const conformed = await this.conformBuffer(decoded, this.audioBuffer.sampleRate, this.audioBuffer.numberOfChannels);
+          this.pendingImport = { buffer: conformed, filename: file.name };
+          this.showImportModal();
+          this.setStatus('Ready');
+        } catch (e) { this.setStatus('Error: ' + e.message); }
+      }
+      async conformBuffer(buf, targetSampleRate, targetChannels) {
+        if (buf.sampleRate === targetSampleRate && buf.numberOfChannels === targetChannels) return buf;
+        const length = Math.ceil(buf.duration * targetSampleRate);
+        const offline = new OfflineAudioContext(targetChannels, length, targetSampleRate);
+        const src = offline.createBufferSource();
+        src.buffer = buf;
+        src.connect(offline.destination);
+        src.start(0);
+        return await offline.startRendering();
+      }
+      showImportModal() {
+        const b = this.pendingImport.buffer;
+        const info = this.pendingImport.filename + ' — ' + this.formatTime(b.duration);
+        document.getElementById('importFileInfo').textContent = info;
+        document.getElementById('modeBegin').checked = true;
+        document.getElementById('crossfadeEnabled').checked = false;
+        document.getElementById('crossfadeDuration').value = 500;
+        document.getElementById('crossfadeValue').textContent = '500 ms';
+        this.updateImportModalState();
+        this.importModal.classList.add('active');
+      }
+      updateImportModalState() {
+        const mode = document.querySelector('input[name="importMode"]:checked').value;
+        const cb = document.getElementById('crossfadeEnabled');
+        const group = document.getElementById('crossfadeGroup');
+        const durGroup = document.getElementById('crossfadeDurationGroup');
+        if (mode === 'replace') {
+          cb.checked = false;
+          cb.disabled = true;
+          group.style.opacity = '0.4';
+          durGroup.style.display = 'none';
+        } else {
+          cb.disabled = false;
+          group.style.opacity = '1';
+          durGroup.style.display = cb.checked ? 'flex' : 'none';
+        }
+      }
+      cancelImport() {
+        this.closeModal(this.importModal);
+        this.pendingImport = null;
+      }
+      confirmImport() {
+        if (!this.pendingImport) { this.closeModal(this.importModal); return; }
+        const mode = document.querySelector('input[name="importMode"]:checked').value;
+        const cfOn = document.getElementById('crossfadeEnabled').checked && mode !== 'replace';
+        const cfMs = parseInt(document.getElementById('crossfadeDuration').value);
+        const cfSamples = cfOn ? Math.floor(cfMs * this.audioBuffer.sampleRate / 1000) : 0;
+        const incoming = this.pendingImport.buffer;
+        const fn = this.pendingImport.filename;
+        this.closeModal(this.importModal);
+        if (mode === 'replace') { this.mergeReplace(incoming, fn); return; }
+        let atSample;
+        if (mode === 'begin') atSample = 0;
+        else if (mode === 'end') atSample = this.audioBuffer.length;
+        else atSample = Math.max(0, Math.min(this.audioBuffer.length, Math.floor(this.playbackPosition * this.audioBuffer.sampleRate)));
+        this.mergeAt(incoming, atSample, cfSamples, cfMs, mode);
+        this.pendingImport = null;
+      }
+      mergeReplace(buf, filename) {
+        this.saveToHistory();
+        this.audioBuffer = buf;
+        this.duration = buf.duration;
+        this.currentFileName = filename.replace(/\.[^/.]+$/, '');
+        this.playbackPosition = 0;
+        this.scrollOffset = 0;
+        this.updateStatusBar(filename);
+        this.refreshAfterEdit();
+        this.setStatus('Replaced with ' + filename);
+        this.pendingImport = null;
+      }
+      mergeAt(B, atSample, cfSamples, cfMs, mode) {
+        this.saveToHistory();
+        const A = this.audioBuffer;
+        const nc = A.numberOfChannels;
+        const sr = A.sampleRate;
+        // Determine seams: trailing seam at left edge of B (with A-before), leading seam at right edge of B (with A-after).
+        // mode=begin: only trailing seam (A-before is empty)
+        // mode=end:   only leading seam (A-after is empty)
+        // mode=playhead: both seams when atSample is strictly inside A
+        const leftLen = atSample;                  // samples of A before B
+        const rightLen = A.length - atSample;      // samples of A after B
+        const hasLeftSeam = mode === 'playhead' || mode === 'end';   // A-before meets B
+        const hasRightSeam = mode === 'playhead' || mode === 'begin'; // B meets A-after
+        // Clamp crossfade to what's available at each seam (and to B's length).
+        let leftCf = hasLeftSeam ? Math.min(cfSamples, leftLen, B.length) : 0;
+        let rightCf = hasRightSeam ? Math.min(cfSamples, rightLen, B.length) : 0;
+        // If both seams share B, crossfades shouldn't overlap inside B.
+        if (mode === 'playhead' && leftCf + rightCf > B.length) {
+          const half = Math.floor(B.length / 2);
+          leftCf = Math.min(leftCf, half);
+          rightCf = Math.min(rightCf, B.length - leftCf);
+        }
+        // Output length: A.length + B.length - leftCf - rightCf
+        const newLen = A.length + B.length - leftCf - rightCf;
+        const out = this.audioContext.createBuffer(nc, newLen, sr);
+        for (let c = 0; c < nc; c++) {
+          const aD = A.getChannelData(c);
+          const bD = B.getChannelData(Math.min(c, B.numberOfChannels - 1));
+          const oD = out.getChannelData(c);
+          // 1) Copy A's pre-seam region (everything before the left crossfade zone).
+          const aPreEnd = atSample - leftCf;
+          if (aPreEnd > 0) oD.set(aD.subarray(0, aPreEnd), 0);
+          let wp = Math.max(0, aPreEnd);
+          // 2) Left crossfade region (A fading out, B fading in). N = leftCf.
+          for (let i = 0; i < leftCf; i++) {
+            const t = leftCf === 1 ? 1 : i / (leftCf - 1);
+            const outGain = Math.cos(t * Math.PI / 2);
+            const inGain = Math.sin(t * Math.PI / 2);
+            oD[wp + i] = aD[atSample - leftCf + i] * outGain + bD[i] * inGain;
+          }
+          wp += leftCf;
+          // 3) Middle of B (between the two crossfade zones).
+          const bMidStart = leftCf;
+          const bMidEnd = B.length - rightCf;
+          if (bMidEnd > bMidStart) {
+            oD.set(bD.subarray(bMidStart, bMidEnd), wp);
+            wp += bMidEnd - bMidStart;
+          }
+          // 4) Right crossfade region (B fading out, A fading in). N = rightCf.
+          for (let i = 0; i < rightCf; i++) {
+            const t = rightCf === 1 ? 1 : i / (rightCf - 1);
+            const outGain = Math.cos(t * Math.PI / 2);
+            const inGain = Math.sin(t * Math.PI / 2);
+            oD[wp + i] = bD[B.length - rightCf + i] * outGain + aD[atSample + i] * inGain;
+          }
+          wp += rightCf;
+          // 5) Copy A's post-seam region.
+          const aPostStart = atSample + rightCf;
+          if (aPostStart < A.length) oD.set(aD.subarray(aPostStart), wp);
+        }
+        this.audioBuffer = out;
+        this.duration = out.duration;
+        this.refreshAfterEdit();
+        const totalCf = (leftCf + rightCf);
+        let msg;
+        if (mode === 'begin') msg = 'Added at beginning' + (totalCf ? ' with ' + cfMs + 'ms crossfade' : '');
+        else if (mode === 'end') msg = 'Added at end' + (totalCf ? ' with ' + cfMs + 'ms crossfade' : '');
+        else msg = 'Added at playhead' + (totalCf ? ' with ' + cfMs + 'ms crossfade (' + (leftCf && rightCf ? '×2' : '×1') + ')' : '');
+        this.setStatus(msg);
+      }
       loadSample() {
         this.setStatus('Generating sample...');
         const sr = 44100, dur = 20, len = sr * dur;
@@ -1860,6 +2060,7 @@
           if (this.exportModal.classList.contains('active')) this.closeModal(this.exportModal);
           if (this.amplifyModal.classList.contains('active')) this.closeModal(this.amplifyModal);
           if (this.silenceModal.classList.contains('active')) this.closeModal(this.silenceModal);
+          if (this.importModal.classList.contains('active')) this.cancelImport();
           return;
         }
         const k = e.code;
